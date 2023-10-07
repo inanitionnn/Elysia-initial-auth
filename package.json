@@ -1,0 +1,31 @@
+{
+  "name": "auth2",
+  "version": "1.0.50",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "NODE_ENV=development bun run --watch src/index.ts",
+    "prod": "NODE_ENV=production bun run src/index.ts",
+    "lint": "bun run prettier . --write --ignore-unknown",
+    "generate": "bun run drizzle-kit generate:pg",
+    "push": "bun run drizzle-kit push:pg"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.28.6",
+    "drizzle-zod": "^0.5.1",
+    "elysia": "latest",
+    "http-errors": "^2.0.0",
+    "postgres": "^3.3.5",
+    "redis": "^4.6.10",
+    "uuid": "^9.0.1",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
+    "@types/http-errors": "^2.0.2",
+    "@types/uuid": "^9.0.5",
+    "@types/winston": "^2.4.4",
+    "drizzle-kit": "^0.19.13",
+    "prettier": "^3.0.3"
+  },
+  "module": "src/index.js"
+}
