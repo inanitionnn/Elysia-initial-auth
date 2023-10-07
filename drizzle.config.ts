@@ -1,13 +1,11 @@
 import type { Config } from "drizzle-kit";
-import { Config as EnvConfig } from "./src/config";
-
-const config = new EnvConfig();
+import { envConfig } from "./src/config";
 
 export default {
   schema: ["./src/users/users.entity.ts"],
   driver: "pg",
   dbCredentials: {
-    connectionString: config.get("DB_URL"),
+    connectionString: envConfig.get("DB_URL"),
   },
   out: "./drizzle",
 } satisfies Config;

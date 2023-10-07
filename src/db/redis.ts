@@ -1,12 +1,18 @@
-import { RedisClientType } from "@redis/client";
 import { createClient } from "redis";
 
 export class Redis {
-  public client: RedisClientType;
+  private client;
 
   constructor() {
     this.client = createClient();
-    this.client.on("error", (err) => console.log("Redis Client Error", err));
+  }
+
+  private async connect() {
+    await this.client.connect();
+  }
+
+  private async disconnect() {
+    await this.client.disconnect();
   }
 
   public async cache<T>(
@@ -14,6 +20,8 @@ export class Redis {
     cacheTimeSeconds: number,
     queryFunction: () => Promise<T>,
   ): Promise<T> {
+    await this.connect();
+
     // Check old cache
     const redisResult = await this.client.get(key);
     if (redisResult) {
@@ -26,6 +34,8 @@ export class Redis {
 
     // Renew cache
     await this.client.setEx(key, cacheTimeSeconds, JSON.stringify(result));
+
+    await this.disconnect();
 
     return result;
   }

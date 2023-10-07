@@ -12,7 +12,7 @@ export class MyError {
       this.logger?.error(title, error.errors);
       return createError(
         statusCode,
-        `${error.errors[0].path}: ${error.errors[0].message}.`,
+        `${error.errors[0].path[0]}: ${error.errors[0].message}.`,
       );
     } else {
       this.logger?.error(title, error);

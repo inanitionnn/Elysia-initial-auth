@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, beforeEach } from "bun:test";
 import { UsersRoutes } from "./users.routes";
 import { UsersHandler } from "./users.handler";
 import { envConfig } from "../config";
@@ -7,19 +7,35 @@ describe("Users Handler", () => {
   const usersHandler = new UsersHandler(false);
   const url = envConfig.get("URL") + "/users";
 
+  let user1Mock = {
+    name: "ExampleName",
+    email: "Example1@gmail.com",
+    password: "ExamplePassword",
+  };
+  let user2Mock = {
+    name: "ExampleName",
+    email: "Example2@gmail.com",
+    password: "ExamplePassword",
+  };
+
+  beforeEach(async () => {
+    user1Mock = {
+      name: "ExampleName",
+      email: "Example1@gmail.com",
+      password: "ExamplePassword",
+    };
+    user2Mock = {
+      name: "ExampleName",
+      email: "Example2@gmail.com",
+      password: "ExamplePassword",
+    };
+    user1Mock.password = await Bun.password.hash(user1Mock.password);
+    user2Mock.password = await Bun.password.hash(user2Mock.password);
+  });
+
   describe("getAllUsers", () => {
     it("Success", async () => {
       // MOCK
-      const user1Mock = {
-        name: "ExampleName",
-        email: "Example1@gmail.com",
-        password: "ExamplePassword",
-      };
-      const user2Mock = {
-        name: "ExampleName",
-        email: "Example2@gmail.com",
-        password: "ExamplePassword",
-      };
       const user1 = await usersHandler.createUser(user1Mock);
       const user2 = await usersHandler.createUser(user2Mock);
 
@@ -47,75 +63,78 @@ describe("Users Handler", () => {
     });
   });
 
-  describe("createUser", () => {
+  describe("getUserById", () => {
     it("Success", async () => {
       // MOCK
-      const requestMock = {
-        name: "ExampleName",
-        email: "Example2@gmail.com",
-        password: "ExamplePassword",
-      };
+      const user1 = await usersHandler.createUser(user1Mock);
 
       // QUERY
-      const response = await usersHandler.createUser(requestMock);
+      const response = await usersHandler.getUserById({ id: user1.id });
 
       // TEST
-      expect(response.name).toBe(requestMock.name);
-      expect(response.email).toBe(requestMock.email);
+      expect(response.name).toBe(user1Mock.name);
+      expect(response.email).toBe(user1Mock.email);
+
+      // CLEAR
+      await usersHandler.deleteUser(user1);
+    });
+    it("Error: Bad request (id)", async () => {
+      // TEST
+      expect(
+        async () => await usersHandler.getUserById({ id: "wrondId" }),
+      ).toThrow("id: Invalid uuid.");
+    });
+  });
+
+  describe("createUser", () => {
+    it("Success", async () => {
+      // QUERY
+      const response = await usersHandler.createUser(user1Mock);
+
+      // TEST
+      expect(response.name).toBe(user1Mock.name);
+      expect(response.email).toBe(user1Mock.email);
 
       // CLEAR
       await usersHandler.deleteUser(response);
     });
     it("Error: Bad request (password)", async () => {
-      // MOCK
-      const requestMock = {
-        name: "ExampleName",
-        email: "Example2@gmail.com",
-        password: "NotHashedPassword",
-      };
+      // Mock
+      user1Mock.password = "BadPassword";
 
       // TEST
-      expect(async () => await usersHandler.createUser(requestMock)).toThrow(
-        "Bad request error!",
+      expect(async () => await usersHandler.createUser(user1Mock)).toThrow(
+        "password",
       );
     });
     it("Error: Bad request (email)", async () => {
       // MOCK
-      let requestMock = {
-        name: "ExampleName",
-        email: "BadEmail",
-        password: "ExamplePassword",
-      };
-
-      requestMock.password = await Bun.password.hash(requestMock.password);
+      user1Mock.email = "BadEmail";
 
       // TEST
-      expect(async () => await usersHandler.createUser(requestMock)).toThrow(
-        "Bad request error!",
+      expect(async () => await usersHandler.createUser(user1Mock)).toThrow(
+        "Invalid email",
       );
     });
   });
 
-  describe("DELETE /api/users/ (Delete user by id)", () => {
-    it("Should return user", async () => {
+  describe("deleteUser", () => {
+    it("Success", async () => {
       // MOCK
-      const userMock = {
-        name: "ExampleName",
-        email: "Example2@gmail.com",
-        password: "ExamplePassword",
-      };
-      const user = await usersHandler.createUser(userMock);
+      const user = await usersHandler.createUser(user1Mock);
 
       // QUERY
-      const response = await UsersRoutes.handle(
-        new Request(url + "/" + user.id, {
-          method: "DELETE",
-        }),
-      ).then((res) => res.json());
+      const response = await usersHandler.deleteUser({ id: user.id });
 
       // TEST
-      expect(response.name).toBe(userMock.name);
-      expect(response.email).toBe(userMock.email);
+      expect(response.name).toBe(user.name);
+      expect(response.email).toBe(user.email);
+    });
+    it("Error: Bad request (id)", async () => {
+      // TEST
+      expect(
+        async () => await usersHandler.deleteUser({ id: "wrondId" }),
+      ).toThrow("id: Invalid uuid.");
     });
   });
 });

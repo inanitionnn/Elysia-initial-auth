@@ -2,7 +2,6 @@
   "name": "auth2",
   "version": "1.0.50",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "NODE_ENV=development bun run --watch src/index.ts",
     "prod": "NODE_ENV=production bun run src/index.ts",
     "lint": "bun run prettier . --write --ignore-unknown",

@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
 import db from "../db/drizzle";
-import createError from "http-errors";
 import { UsersTable } from "./users.entity";
 import { Redis } from "../db";
 import { logger } from "../log";
@@ -32,71 +31,77 @@ export class UsersHandler {
     }
   }
 
-  public async getUserById(dto: UserId): Promise<User[]> {
-    this.log?.info("getUserById", { id: dto.id });
+  public async getUserById(dto: UserId): Promise<User> {
+    this.log?.info("getUserById", dto);
 
     // Zod
     let dtoZod: UserId;
     try {
       dtoZod = UserIdZod.parse(dto);
     } catch (error) {
-      this.myError.new("getUserById", 400, error);
+      throw this.myError.new("getUserById", 400, error);
     }
 
     try {
-      this.log?.info("getAllUsers");
-
-      const query = async () =>
-        db
+      const query = async () => {
+        const result = await db
           .select()
           .from(UsersTable)
           .where(eq(UsersTable.id, dtoZod?.id));
+        return result[0];
+      };
 
-      return this.redis.cache("getAllUsers", 10, query);
+      return this.redis.cache("getUserById", 10, query);
     } catch (error) {
-      throw this.myError.new("getAllUsers", 500, error);
+      throw this.myError.new("getUserById", 500, error);
     }
   }
 
   public async createUser(dto: UserCreate): Promise<User> {
-    if (this.log) this.log.info("createUser");
+    this.log?.info("createUser", dto);
 
     // Zod
     let dtoZod: UserCreate;
     try {
       dtoZod = UserCreateZod.parse(dto);
-    } catch ({ errors }: any) {
-      this.log?.error("createUser", errors);
-      throw createError(400, `${errors[0].message}.`);
+    } catch (error) {
+      throw this.myError.new("createUser", 400, error);
     }
 
     // Query
-    const result = await db
-      .insert(UsersTable)
-      .values([{ ...dtoZod }])
-      .returning();
+    try {
+      const result = await db
+        .insert(UsersTable)
+        .values([{ ...dtoZod }])
+        .returning();
 
-    return result[0];
+      return result[0];
+    } catch (error) {
+      throw this.myError.new("createUser", 500, error);
+    }
   }
 
   public async deleteUser(dto: UserId): Promise<User> {
-    if (this.log) this.log.info("deleteUser");
+    this.log?.info("deleteUser", dto);
 
     // Zod
     let dtoZod: UserId;
     try {
       dtoZod = UserIdZod.parse(dto);
-    } catch ({ errors }: any) {
-      this.log?.error("deleteUser", errors);
-      throw createError(400, `${errors[0].message}.`);
+    } catch (error) {
+      throw this.myError.new("deleteUser", 400, error);
     }
 
     // Query
-    const result = await db
-      .delete(UsersTable)
-      .where(eq(UsersTable.id, dtoZod?.id))
-      .returning();
+    try {
+      const result = await db
+        .delete(UsersTable)
+        .where(eq(UsersTable.id, dtoZod?.id))
+        .returning();
 
-    return result[0];
+      return result[0];
+    } catch (error) {
+      throw this.myError.new("deleteUser", 500, error);
+    }
   }
 }
