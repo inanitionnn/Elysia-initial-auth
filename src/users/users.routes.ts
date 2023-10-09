@@ -1,18 +1,24 @@
 import Elysia, { t } from "elysia";
-import { UsersHandler } from "./users.handler";
+import { UsersHandlers } from "./users.handlers";
 
-const usersHandler = new UsersHandler();
+const usersHandler = new UsersHandlers();
 
 export const UsersRoutes = new Elysia().group("/users", (app) =>
   app
-    .get("/", () => usersHandler.getAllUsers())
-    .get("/:id", ({ params }) => usersHandler.getUserById(params))
-    .post("/", ({ body }) => usersHandler.createUser(body), {
+    .get("/", async () => await usersHandler.getAllUsers())
+    .get(
+      "/:id",
+      async ({ params }) => await usersHandler.getUserById(params.id),
+    )
+    .post("/", async ({ body }) => await usersHandler.createUser(body), {
       body: t.Object({
         name: t.String(),
         email: t.String(),
         password: t.String(),
       }),
     })
-    .delete("/:id", ({ params }) => usersHandler.deleteUser(params)),
+    .delete(
+      "/:id",
+      async ({ params }) => await usersHandler.deleteUser(params.id),
+    ),
 );

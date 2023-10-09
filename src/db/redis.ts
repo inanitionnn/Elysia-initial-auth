@@ -2,17 +2,21 @@ import { createClient } from "redis";
 
 export class Redis {
   private client;
+  private isConnected: boolean;
 
   constructor() {
     this.client = createClient();
+    this.isConnected = false;
   }
 
   private async connect() {
     await this.client.connect();
+    this.isConnected = true;
   }
 
   private async disconnect() {
     await this.client.disconnect();
+    this.isConnected = false;
   }
 
   public async cache<T>(
@@ -20,7 +24,9 @@ export class Redis {
     cacheTimeSeconds: number,
     queryFunction: () => Promise<T>,
   ): Promise<T> {
-    await this.connect();
+    if (!this.isConnected) {
+      await this.connect();
+    }
 
     // Check old cache
     const redisResult = await this.client.get(key);
@@ -31,11 +37,8 @@ export class Redis {
 
     // Query
     const result = await queryFunction();
-
     // Renew cache
     await this.client.setEx(key, cacheTimeSeconds, JSON.stringify(result));
-
-    await this.disconnect();
 
     return result;
   }

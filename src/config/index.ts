@@ -1,4 +1,10 @@
-type envType = "URL" | "DB_URL" | "PORT";
+type envType =
+  | "URL"
+  | "DB_URL"
+  | "PORT"
+  | "JWT_SECRET"
+  | "REFRESH_JWT_EXPIRE_DAYS"
+  | "ACCESS_JWT_EXPIRE_MINS";
 
 class Config {
   public get(name: envType) {

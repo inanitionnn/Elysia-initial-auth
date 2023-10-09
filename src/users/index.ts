@@ -1,2 +1,2 @@
 export { UsersRoutes } from "./users.routes";
-export { UsersHandler } from "./users.handler";
+export { UsersHandlers } from "./users.handlers";

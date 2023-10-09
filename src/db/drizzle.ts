@@ -9,7 +9,7 @@ import postgres from "postgres";
 const queryClient = postgres(process.env.DB_URL || "");
 
 const db: PostgresJsDatabase = drizzle(queryClient, {
-  logger: process.env.NODE_ENV === "development",
+  // logger: process.env.NODE_ENV === "development",
 });
 
 export default db;

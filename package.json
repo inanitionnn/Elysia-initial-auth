@@ -9,10 +9,13 @@
     "push": "bun run drizzle-kit push:pg"
   },
   "dependencies": {
+    "@elysiajs/bearer": "^0.7.0",
+    "@elysiajs/cors": "^0.7.1",
     "drizzle-orm": "^0.28.6",
     "drizzle-zod": "^0.5.1",
     "elysia": "latest",
     "http-errors": "^2.0.0",
+    "jsonwebtoken": "8.5.1",
     "postgres": "^3.3.5",
     "redis": "^4.6.10",
     "uuid": "^9.0.1",
@@ -21,8 +24,10 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
     "@types/http-errors": "^2.0.2",
+    "@types/jsonwebtoken": "^9.0.3",
     "@types/uuid": "^9.0.5",
     "@types/winston": "^2.4.4",
+    "bun-types": "^1.0.5-canary.20231009T140142",
     "drizzle-kit": "^0.19.13",
     "prettier": "^3.0.3"
   },
