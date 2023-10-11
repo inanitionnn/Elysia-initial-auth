@@ -3,6 +3,7 @@ import { UsersRoutes } from "./users";
 import { logger } from "./log";
 import { envConfig } from "./config";
 import cors from "@elysiajs/cors";
+import { AuthRoutes } from "./auth/auth.routes";
 
 const PORT = Number(envConfig.get("PORT"));
 export const app = new Elysia()
@@ -11,7 +12,7 @@ export const app = new Elysia()
       // origin: /\*.saltyaom.com$/
     }),
   )
-  .group("/api", (app) => app.use(UsersRoutes))
+  .group("/api", (app) => app.use(UsersRoutes).use(AuthRoutes))
   .listen(PORT);
 
 logger.info(

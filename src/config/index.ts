@@ -4,7 +4,11 @@ type envType =
   | "PORT"
   | "JWT_SECRET"
   | "REFRESH_JWT_EXPIRE_DAYS"
-  | "ACCESS_JWT_EXPIRE_MINS";
+  | "ACCESS_JWT_EXPIRE_MINS"
+  |"SMTP_HOST"
+  | "SMTP_PORT"
+  | "SMTP_USER"
+  | "SMTP_PASSWORD"
 
 class Config {
   public get(name: envType) {

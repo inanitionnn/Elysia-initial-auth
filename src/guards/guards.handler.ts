@@ -1,21 +1,21 @@
-import { JWTPayloadSpec } from "@elysiajs/jwt";
+import { envConfig } from "../config";
 import { MyError } from "../error";
-import { UsersHandler } from "../users";
-import { RoleType, User } from "../users/dto";
+import { RoleType, User, UsersHandlers } from "../users";
+import jwt from "jsonwebtoken";
 
-export class GuardsHandler {
+export class GuardsHandlers {
   private usersHandler;
   private myError;
   constructor() {
     this.myError = new MyError();
-    this.usersHandler = new UsersHandler();
+    this.usersHandler = new UsersHandlers();
   }
 
   public async roleGuard(
     userId: string,
     rolesWithAccess: RoleType[],
   ): Promise<User> {
-    const user = await this.usersHandler.getUserById({ id: userId });
+    const user = await this.usersHandler.getUserById(userId);
     if (!user) {
       throw this.myError.new("roleGuard", 404, "User not found");
     }
@@ -25,23 +25,23 @@ export class GuardsHandler {
     return user;
   }
 
-  public async authGuard(
-    bearer: string | undefined,
-    jwtVerify: (
-      jwt?: string | undefined,
-    ) => Promise<false | (Record<string, string> & JWTPayloadSpec)>,
-  ): Promise<User> {
+  public async authGuard(bearer: string | undefined): Promise<User> {
     if (!bearer) {
-      throw this.myError.new("AuthGuardRoute", 401, "Unauthorized");
+      throw this.myError.new("AuthGuardRoute", 401, "Missing jwt");
+    }
+    const secret = envConfig.get("JWT_SECRET");
+    let userJwt;
+    try {
+      userJwt = jwt.verify(bearer, secret);
+    } catch (error) {
+      throw this.myError.new("AuthGuardRoute", 401, error);
     }
 
-    const userJwt = await jwtVerify(bearer);
-
-    if (!userJwt) {
-      throw this.myError.new("AuthGuardRoute", 401, "Unauthorized");
+    if (typeof userJwt === "string") {
+      throw this.myError.new("AuthGuardRoute", 401, "Invalid jwt");
     }
 
-    const user = await this.usersHandler.getUserById({ id: userJwt.id });
+    const user = await this.usersHandler.getUserById(userJwt.id);
 
     if (!user) {
       throw this.myError.new("AuthGuardRoute", 404, "User not found");
@@ -51,7 +51,7 @@ export class GuardsHandler {
   }
 
   public async localGuard(email: string, password: string): Promise<User> {
-    const user = await this.usersHandler.getUserByEmail({ email });
+    const user = await this.usersHandler.getUserByEmail(email);
     if (!user) {
       throw this.myError.new("AuthGuardRoute", 404, "User not found");
     }
@@ -65,13 +65,13 @@ export class GuardsHandler {
       throw this.myError.new("AuthGuardRoute", 403, "Account in banned");
     }
 
-    if (!user.isActivated) {
-      throw this.myError.new(
-        "AuthGuardRoute",
-        403,
-        "Account in not activated. Please check your email",
-      );
-    }
+    // if (!user.isActivated) {
+    //   throw this.myError.new(
+    //     "AuthGuardRoute",
+    //     403,
+    //     "Account in not activated. Please check your email",
+    //   );
+    // }
 
     return user;
   }

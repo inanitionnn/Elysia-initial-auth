@@ -2,10 +2,10 @@ import { envConfig } from "../config";
 import db from "../db/drizzle";
 import { MyError } from "../error";
 import { logger } from "../log";
-import { User } from "../users";
 import jwt from "jsonwebtoken";
-import { TokensTable } from "./token.entity";
+import { TokenZod, TokensTable } from "./token.entity";
 import { and, eq, sql } from "drizzle-orm";
+import { User, UserZod } from "../users/user.entity";
 
 export class TokensHandlers {
   private log;
@@ -53,6 +53,13 @@ export class TokensHandlers {
   //#region Generate
   public async generateTokens(user: User, userAgent: string) {
     this.log?.info("generateTokens");
+    // Zod
+    try {
+      UserZod.parse(user);
+    } catch (error) {
+      throw this.myError.new("generateTokens", 400, error);
+    }
+    // Query
     const accessToken = this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user.id, userAgent);
 
@@ -122,6 +129,15 @@ export class TokensHandlers {
   //#region Delete
   public async deleteRefreshToken(refreshToken: string): Promise<void> {
     this.log?.info("deleteRefreshToken");
+
+    // Zod
+    try {
+      TokenZod.pick({ token: true }).parse({ token: refreshToken });
+    } catch (error) {
+      throw this.myError.new("deleteRefreshToken", 400, error);
+    }
+
+    // Query
     try {
       await db.delete(TokensTable).where(eq(TokensTable.token, refreshToken));
     } catch (error) {
@@ -135,6 +151,15 @@ export class TokensHandlers {
   public async updateTokens(user: User, userAgent: string) {
     this.log?.info("updateTokens");
     const uniqueId = String(Bun.hash(userAgent));
+
+    // Zod
+    try {
+      UserZod.parse(user);
+    } catch (error) {
+      throw this.myError.new("updateTokens", 400, error);
+    }
+
+    // Query
     try {
       // delete old token
       await db
@@ -161,12 +186,21 @@ export class TokensHandlers {
   public async validRefreshToken(refreshToken: string) {
     this.log?.info("validRefreshToken");
 
+    // Zod
+    try {
+      TokenZod.pick({ token: true }).parse({ token: refreshToken });
+    } catch (error) {
+      throw this.myError.new("validRefreshToken", 400, error);
+    }
+
+    // Query
     const tokenUser = await this.getRefreshTokenUser(refreshToken);
 
     if (!tokenUser) {
       throw this.myError.new("validRefreshToken", 404, "Token not found");
     }
 
+    // Check expire
     const expiresIn = this.REFRESH_JWT_EXPIRE * 1000;
     const now = Date.now();
     const createdAt = tokenUser.createdAt.getTime();

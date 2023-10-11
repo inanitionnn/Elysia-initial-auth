@@ -5,9 +5,11 @@ import {
   uniqueIndex,
   bigint,
   char,
+  index,
 } from "drizzle-orm/pg-core";
 import { UsersTable } from "../users/user.entity";
 import { relations } from "drizzle-orm";
+import { createSelectSchema } from "drizzle-zod";
 
 export const TokensTable = pgTable(
   "tokens",
@@ -21,7 +23,7 @@ export const TokensTable = pgTable(
   (table) => {
     return {
       tokenIdx: uniqueIndex("token_idx").on(table.token),
-      userIdIdx: uniqueIndex("userId_idx").on(table.userId),
+      userIdIdx: index("userId_idx").on(table.userId),
       uniqueIdIdx: uniqueIndex("uniqueId_idx").on(table.uniqueId, table.userId),
     };
   },
@@ -33,3 +35,7 @@ export const TokensRelations = relations(TokensTable, ({ one }) => ({
     references: [UsersTable.id],
   }),
 }));
+
+export const TokenZod = createSelectSchema(TokensTable, {
+  uniqueId: (schema) => schema.uniqueId.length(21),
+});

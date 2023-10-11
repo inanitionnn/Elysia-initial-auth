@@ -47,13 +47,15 @@ export const UsersRelations = relations(UsersTable, ({ many }) => ({
 }));
 
 export type User = InferSelectModel<typeof UsersTable>;
-export type UserAddRole = Pick<InferSelectModel<typeof UsersTable>, "role" | "id">;
+export type UserAddRole = Pick<
+  InferSelectModel<typeof UsersTable>,
+  "role" | "id"
+>;
 export type UserCreate = Pick<
   InferInsertModel<typeof UsersTable>,
   "name" | "email" | "password"
 >;
 export type RoleType = (typeof roleEnum.enumValues)[number];
-
 
 export const UserZod = createSelectSchema(UsersTable, {
   email: (schema) => schema.email.email(),

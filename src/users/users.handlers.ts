@@ -1,9 +1,16 @@
 import { eq } from "drizzle-orm";
 import db from "../db/drizzle";
-import { User, UserAddRole, UserCreate, UserZod, UsersTable } from "./user.entity";
+import {
+  User,
+  UserAddRole,
+  UserCreate,
+  UserZod,
+  UsersTable,
+} from "./user.entity";
 import { Redis } from "../db";
 import { logger } from "../log";
 import { MyError } from "../error";
+import { password } from "bun";
 
 export class UsersHandlers {
   private log;
@@ -40,16 +47,21 @@ export class UsersHandlers {
 
     // Query
     try {
-      const query = async () => {
-        const result = await db
-          .select()
-          .from(UsersTable)
-          .where(eq(UsersTable.id, userId));
-        if (result[0]) return result[0];
-        return null;
-      };
+      const cacheUser: User = await this.redis.check(
+        `getUserById:${userId}`,
+        10,
+      );
+      if (cacheUser) {
+        return { ...cacheUser, createdAt: new Date(cacheUser.createdAt) };
+      }
 
-      return this.redis.cache(`getUserById:${userId}`, 10, query);
+      const result = (
+        await db.select().from(UsersTable).where(eq(UsersTable.id, userId))
+      )[0];
+
+      await this.redis.save(`getUserById:${userId}`, 10, result);
+
+      return result;
     } catch (error) {
       throw this.myError.new("getUserById", 500, error);
     }
@@ -67,21 +79,24 @@ export class UsersHandlers {
 
     // Query
     try {
-      const query = async () => {
-        const result = await db
-          .select()
-          .from(UsersTable)
-          .where(eq(UsersTable.email, userEmail));
-        if (result[0]) return result[0];
-        return null;
-      };
-      const res = await this.redis.cache(
+      const cacheUser: User = await this.redis.check(
         `getUserByEmail:${userEmail}`,
         10,
-        query,
       );
+      if (cacheUser) {
+        return { ...cacheUser, createdAt: new Date(cacheUser.createdAt) };
+      }
 
-      return res;
+      const result = (
+        await db
+          .select()
+          .from(UsersTable)
+          .where(eq(UsersTable.email, userEmail))
+      )[0];
+
+      await this.redis.save(`getUserByEmail:${userEmail}`, 10, result);
+
+      return result;
     } catch (error) {
       throw this.myError.new("getUserByEmail", 500, error);
     }
@@ -91,6 +106,8 @@ export class UsersHandlers {
   //#region Create
   public async createUser(dto: UserCreate): Promise<User> {
     this.log?.info("createUser");
+
+    dto.password = await Bun.password.hash(dto.password);
 
     // Zod
     try {

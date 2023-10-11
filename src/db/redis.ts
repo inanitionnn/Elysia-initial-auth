@@ -14,9 +14,28 @@ export class Redis {
     this.isConnected = true;
   }
 
-  private async disconnect() {
-    await this.client.disconnect();
-    this.isConnected = false;
+  public async check(key: string, cacheTimeSeconds: number) {
+    if (!this.isConnected) {
+      await this.connect();
+    }
+
+    const redisResult = await this.client.get(key);
+    if (redisResult) {
+      await this.client.expire(key, cacheTimeSeconds, "XX");
+      return JSON.parse(redisResult);
+    }
+  }
+
+  public async save(
+    key: string,
+    cacheTimeSeconds: number,
+    value: { [keys: string]: any },
+  ) {
+    if (!this.isConnected) {
+      await this.connect();
+    }
+
+    await this.client.setEx(key, cacheTimeSeconds, JSON.stringify(value));
   }
 
   public async cache<T>(
@@ -38,7 +57,6 @@ export class Redis {
     // Query
     const result = await queryFunction();
     // Renew cache
-    await this.client.setEx(key, cacheTimeSeconds, JSON.stringify(result));
 
     return result;
   }

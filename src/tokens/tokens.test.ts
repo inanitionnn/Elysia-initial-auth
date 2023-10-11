@@ -1,35 +1,36 @@
-import { describe, expect, it, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
 import { TokensHandlers } from "./tokens.handler";
-import { User, UsersHandlers } from "../users";
+import { UsersHandlers } from "../users";
 import jwt from "jsonwebtoken";
 import { envConfig } from "../config";
+import { User } from "../users/user.entity";
+
+const JWT_SECRET = envConfig.get("JWT_SECRET");
+
+const tokensHandlers = new TokensHandlers(false);
+const usersHandler = new UsersHandlers(false);
+
+let userMock;
+let user: User;
+beforeEach(async () => {
+  userMock = {
+    name: "ExampleName",
+    email: "Example@gmail.com",
+    password: "ExamplePassword",
+  };
+
+  userMock.password = await Bun.password.hash(userMock.password);
+  user = await usersHandler.createUser(userMock);
+});
+
+afterEach(async () => {
+  await usersHandler.deleteUser(user.id);
+});
 
 describe("Tokens", () => {
-  const JWT_SECRET = envConfig.get("JWT_SECRET");
-
-  const tokensHandlers = new TokensHandlers(false);
-  const usersHandler = new UsersHandlers(false);
-
-  let userMock;
-  let user: User;
-  beforeEach(async () => {
-    userMock = {
-      name: "ExampleName",
-      email: "Example1@gmail.com",
-      password: "ExamplePassword",
-    };
-
-    userMock.password = await Bun.password.hash(userMock.password);
-    user = await usersHandler.createUser(userMock);
-  });
-
-  afterEach(async () => {
-    await usersHandler.deleteUser(user.id);
-  });
-
   describe("Handlers", () => {
     describe("generateTokens", () => {
-      it("Success", async () => {
+      test("Success", async () => {
         // QUERY
         const { accessToken, refreshToken } =
           await tokensHandlers.generateTokens(user, "some User Agent");
@@ -46,7 +47,7 @@ describe("Tokens", () => {
       });
     });
     describe("validRefreshToken", () => {
-      it("Success", async () => {
+      test("Success", async () => {
         // MOCK
         const { refreshToken } = await tokensHandlers.generateTokens(
           user,
@@ -59,7 +60,7 @@ describe("Tokens", () => {
         // TEST
         expect(tokenUser.userId).toBe(user.id);
       });
-      it("Error: Not found (token)", async () => {
+      test("Error: Not found (token)", async () => {
         // MOCK
         const { refreshToken } = await tokensHandlers.generateTokens(
           user,
@@ -72,9 +73,15 @@ describe("Tokens", () => {
           async () => await tokensHandlers.validRefreshToken(refreshToken),
         ).toThrow("Token not found");
       });
+      test("Error: Bad request (token)", async () => {
+        // TEST
+        expect(
+          async () => await tokensHandlers.validRefreshToken("Bad token"),
+        ).toThrow("token: Invalid uuid");
+      });
     });
     describe("deleteRefreshToken", () => {
-      it("Success", async () => {
+      test("Success", async () => {
         // MOCK
         const { refreshToken } = await tokensHandlers.generateTokens(
           user,
@@ -89,9 +96,15 @@ describe("Tokens", () => {
           async () => await tokensHandlers.validRefreshToken(refreshToken),
         ).toThrow("Token not found");
       });
+      test("Error: Bad request (token)", async () => {
+        // TEST
+        expect(
+          async () => await tokensHandlers.deleteRefreshToken("Bad token"),
+        ).toThrow("token: Invalid uuid");
+      });
     });
     describe("updateTokens", () => {
-      it("Success", async () => {
+      test("Success", async () => {
         // MOCK
         await tokensHandlers.generateTokens(user, "some User Agent");
 
@@ -105,7 +118,7 @@ describe("Tokens", () => {
         expect(accessToken).toBeString();
         expect(refreshToken).toBeString();
       });
-      it("Success", async () => {
+      test("Success", async () => {
         // QUERY
         const { accessToken, refreshToken } = await tokensHandlers.updateTokens(
           user,

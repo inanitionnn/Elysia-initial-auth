@@ -42,8 +42,6 @@ describe("Users", () => {
   describe("Routes", () => {});
 
   describe("Handlers", () => {
-    // TODO
-    // usersHandler.addRoleToUser
     describe("getAllUsers", () => {
       it("Success", async () => {
         // QUERY
@@ -109,6 +107,9 @@ describe("Users", () => {
         // TEST
         expect(response.name).toBe(userMock.name);
         expect(response.email).toBe(userMock.email);
+
+        // Clear
+        await usersHandler.deleteUser(response.id);
       });
       it("Error: Bad request (password)", async () => {
         // Mock
@@ -146,5 +147,28 @@ describe("Users", () => {
         );
       });
     });
+
+    // TODO
+    // describe("addRoleToUser", () => {
+    //   it("Success", async () => {
+    //     // QUERY
+    //     const response = await usersHandler.addRoleToUser();
+
+    //     // TEST
+    //     expect(response).toBeArray();
+    //     expect(response.find((user) => user.id === user1.id)?.name).toBe(
+    //       user1.name,
+    //     );
+    //     expect(response.find((user) => user.id === user1.id)?.email).toBe(
+    //       user1.email,
+    //     );
+    //     expect(response.find((user) => user.id === user2.id)?.email).toBe(
+    //       user2.email,
+    //     );
+    //     expect(response.find((user) => user.id === user2.id)?.email).toBe(
+    //       user2.email,
+    //     );
+    //   });
+    // });
   });
 });
