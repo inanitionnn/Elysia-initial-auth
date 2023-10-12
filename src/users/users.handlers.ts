@@ -107,8 +107,6 @@ export class UsersHandlers {
   public async createUser(dto: UserCreate): Promise<User> {
     this.log?.info("createUser");
 
-    dto.password = await Bun.password.hash(dto.password);
-
     // Zod
     try {
       UserZod.pick({ name: true, email: true, password: true }).parse(dto);
